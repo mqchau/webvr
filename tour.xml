@@ -77,9 +77,99 @@
 		if(startactions !== null, startactions() );
 	</action>
 
+	<!-- the map image -->
+	<layer name="map" url="graphics/inmap.png" keep="true" handcursor="false" capture="false"
+	       align="leftbottom"
+	       scale="0.25" scalechildren="true"
+	       onclick="openmap();"
+	       />
+
+	<!-- map opening - scale the map up to 100% (or smaller if the screen is too small) -->
+	<action name="openmap">
+		set(layer[map].onclick, closemap(); );
+		layer[map].changeorigin(center,center);
+
+		set(bigscale,1);
+		if(layer[map].imagewidth GT stagewidth, div(bigscale, stagewidth, layer[map].imagewidth); );
+
+		tween(layer[map].x, 0);
+		tween(layer[map].y, 0);
+		tween(layer[map].scale, get(bigscale));
+	</action>
+
+	<!-- map closing - scale the map back to 25% -->
+	<action name="closemap">
+		set(layer[map].onclick, openmap(); );
+		layer[map].changeorigin(leftbottom,leftbottom);
+
+		tween(layer[map].x, 0);
+		tween(layer[map].y, 0);
+		tween(layer[map].scale, 0.25);
+	</action>
+
+
+	<!-- the map spot images -->
+	<style name="mapspot" keep="true" url="graphics/camicon.png" parent="map" align="lefttop" edge="center" scale.mobile="2" />
+
+	<layer name="mapspot1" style="mapspot" x="474" y="314" zorder="1" onclick="mapspot_loadscene(scene_IMG_2461);" />
+	<layer name="mapspot2" style="mapspot" x="172" y="488" zorder="1" onclick="mapspot_loadscene(scene_IMG_2462);" />
+	<layer name="mapspot3" style="mapspot" x="732" y="315" zorder="1" onclick="mapspot_loadscene(scene_IMG_2463);" />
+
+	<!-- action for loading the scene when clicking on the map spots -->
+	<action name="mapspot_loadscene">
+		if(layer[map].scale GT 0.25,
+			<!-- special mode for zoomed map: hide big map, loadscene, show small map -->
+			set(layer[map].enabled, false);
+			tween(layer[map].alpha, 0.0, 0.25, default,
+				loadscene(%1, null, MERGE, BLEND(1));
+
+				set(layer[map].onclick, openmap(); );
+				layer[map].changeorigin(leftbottom,leftbottom);
+
+				set(layer[map].x, 0);
+				set(layer[map].y, 0);
+				set(layer[map].scale, 0.25);
+
+				set(events[sceneload].onloadcomplete,
+					delayedcall(1,
+						tween(layer[map].alpha, 1.0, 0.5, default, set(layer[map].enabled, true); );
+					  );
+				  );
+			  );
+		  ,
+			<!-- small map: just load the scene -->
+			loadscene(%1, null, MERGE, BLEND(1));
+		  );
+	</action>
+
+	<!-- active spot image (overlays the normal spot) -->
+	<layer name="activespot" url="graphics/camicon_red.png" keep="true"
+	       align="lefttop" zorder="2" scale.mobile="2"
+	       />
+
+	<!-- radar layer (overlays the normal spot too, but is behind the activespot image) -->
+    <layer name="radar" keep="true"                            
+           url.flash="%SWFPATH%/plugins/radar.swf"             
+           url.html5="%SWFPATH%/plugins/radar.js"              
+           scale="2.0"
+           align="center" zorder="1"                           
+           scale.mobile="1.5"                                  
+           fillalpha="0.5" fillcolor="0x7F5F3F"                
+           linewidth="1.0" linecolor="0xE0E0A0" linealpha="0.5"
+           editmode="true"                                     
+           />                                                  
+
+
 
 	
-	<scene name="scene_IMG_2461" title="IMG_2461" onstart="" thumburl="panos/IMG_2461.tiles/thumb.jpg" lat="34.14539167" lng="-118.15238611" heading="315.0">
+	<scene name="scene_IMG_2461" title="IMG_2461" thumburl="panos/IMG_2461.tiles/thumb.jpg" lat="34.14539167" lng="-118.15238611" heading="315.0" onstart="updateradar();">
+
+		<action name="updateradar">
+			set(layer[activespot].parent, mapspot1);
+			set(layer[radar].parent, mapspot1);
+			set(layer[radar].heading, -1.92);
+		</action>
+
 
 		<view hlookat="0" vlookat="0" fovtype="MFOV" fov="120" maxpixelzoom="2.0" fovmin="70" fovmax="140" limitview="auto" />
 
@@ -101,7 +191,13 @@
 
 	</scene>
 
-	<scene name="scene_IMG_2462" title="IMG_2462" onstart="" thumburl="panos/IMG_2462.tiles/thumb.jpg" lat="34.14553889" lng="-118.15267500" heading="22.5">
+	<scene name="scene_IMG_2462" title="IMG_2462" thumburl="panos/IMG_2462.tiles/thumb.jpg" lat="34.14553889" lng="-118.15267500" heading="22.5" onstart="updateradar();">
+
+		<action name="updateradar">
+			set(layer[activespot].parent, mapspot2);
+			set(layer[radar].parent, mapspot2);
+			set(layer[radar].heading, 87.10);
+		</action>
 
 		<view hlookat="0" vlookat="0" fovtype="MFOV" fov="120" maxpixelzoom="2.0" fovmin="70" fovmax="140" limitview="auto" />
 
@@ -276,6 +372,7 @@
 		<hotspot name="spot4" style="skin_hotspotstyle" ath="157.447" atv="-10.094" linkedscene="scene_img_2461" />
 
 	</scene>
+
 
 
 </krpano>
